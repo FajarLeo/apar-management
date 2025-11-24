@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Login - Dashboard APAR</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Poppins", sans-serif;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .left {
+      flex: 1;
+      background-image: url('tkk.jpeg');
+      background-size: cover;
+      background-position: center;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 40px;
+      text-align: center;
+      position: relative;
+    }
+
+    .left p {
+      font-size: 15px;
+      line-height: 1.6;
+      max-width: 380px;
+      margin-bottom: 25px;
+    }
+
+      .left img {
+      max-width: 150px;
+      height: auto;
+      margin-bottom: 20px; /* jarak antara gambar dan teks */
+      top: auto;
+    }
+
+
+    .right {
+      flex: 1;
+      background-image: url('bg.jpg');
+      background-size: cover;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .right img {
+      max-width: 150px;
+      height: auto;
+      position: relative;
+      align-items: center;
+      top: -60px; 
+      
+    }
+
+     .right h2 {
+      font-size: 60px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      font-family: Georgia, 'Times New Roman', Times, serif;
+    }
+
+    .login-box {
+      padding: 40px 50px;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    .login-box h2 {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 30px;
+    }
+
+    .input-group {
+      margin-bottom: 20px;
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 14px;
+      background: #f3f3f3;
+    }
+
+    .input-group input:focus {
+      border-color: #0b1e70;
+      outline: none;
+      background: #fff;
+    }
+
+    button.login {
+      width: 100%;
+      padding: 12px;
+      background: #c9302c;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button.login:hover {
+      background: #d9534f;
+    }
+
+    .forgot {
+      margin-top: 12px;
+      font-size: 13px;
+    }
+
+    .forgot a {
+      color: #0b1e70;
+      text-decoration: none;
+    }
+
+    .forgot a:hover {
+      text-decoration: underline;
+    }
+
+    .error {
+      color: red;
+      font-size: 13px;
+      margin-top: 10px;
+    }
+
+    @media (max-width: 900px) {
+      body {
+        flex-direction: column;
+      }
+
+      .left {
+        padding: 40px 20px;
+      }
+
+      .left img {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="left">
+   <img src="dsngroup1.png" alt="Damkar Teka Logo">
+  </div>
+
+  <div class="right">
+    <div class="login-box">
+      <img src="teka.png" alt="Damkar Teka Logo">
+      <h2>TEKA Fire Department Management System</h2>
+      <div class="input-group">
+        <input type="text" id="npk" placeholder="NPK">
+      </div>
+      <div class="input-group">
+        <input type="password" id="password" placeholder="Password">
+      </div>
+      <button class="login" id="loginBtn">SIGN ME IN</button>
+      <div class="forgot">
+        <a href="#">Forgot Password?</a>
+      </div>
+      <div class="error" id="errorMsg"></div>
+    </div>
+    <footer style="position: absolute; bottom: 10px; font-size: 12px; font-family: 'Courier New', Courier, monospace; color: #333; text-align: center; width: 100%;">&copy; Be Spirit Copyright 2025</footer>
+  </div>
+
+  <!-- Firebase login logic -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-app.js";
+    import { getDatabase, ref, get, child } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAoZPIGUuCZxosN5m2LFirk9Spf7c9QZrA",
+      authDomain: "be-spirit-project.firebaseapp.com",
+      databaseURL: "https://be-spirit-project-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "be-spirit-project",
+      storageBucket: "be-spirit-project.firebasestorage.app",
+      messagingSenderId: "518798108329",
+      appId: "1:518798108329:web:f3a64e05dbb1c20751ebb8",
+      measurementId: "G-55M6SPB3QM"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    document.getElementById("loginBtn").addEventListener("click", async () => {
+      const npk = document.getElementById("npk").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const errorMsg = document.getElementById("errorMsg");
+
+      if (!npk || !password) {
+        errorMsg.textContent = "⚠️ NPK dan Password wajib diisi!";
+        return;
+      }
+
+      const dbRef = ref(db);
+
+      try {
+        const snapshot = await get(child(dbRef, `users/${npk}`));
+
+        if (snapshot.exists()) {
+          const user = snapshot.val();
+
+          if (user.password === password) {
+            localStorage.setItem("userNPK", npk);
+            localStorage.setItem("userName", user.username);
+            localStorage.setItem("userStatus", user.status);
+            window.location.href = "home.html";
+          } else {
+            errorMsg.textContent = "❌ Password salah.";
+          }
+        } else {
+          errorMsg.textContent = "❌ NPK tidak ditemukan.";
+        }
+      } catch (error) {
+        errorMsg.textContent = "⚠️ Gagal terhubung ke database.";
+        console.error(error);
+      }
+    });
+  </script>
+</body>
+</html>
