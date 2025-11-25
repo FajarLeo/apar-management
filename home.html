@@ -665,6 +665,14 @@ document.getElementById("btnUpdateSave").onclick = async () => {
   loadDashboard();
 };
 
+    // Auto refresh dashboard setiap 15 detik
+setInterval(() => {
+  const dashboardVisible = document.getElementById("dashboardContent").style.display !== "none";
+  if (dashboardVisible) {
+    loadDashboard();
+  }
+}, 300000); // 300000ms = 300 detik = 5 menit
+
 
   function setActiveMenu(menuId) {
     const menuItems = document.querySelectorAll('.sidebar a');
@@ -995,6 +1003,7 @@ document.getElementById("btnUpdateSave").onclick = async () => {
 
 </body>
 </html>
+
 
 
 
