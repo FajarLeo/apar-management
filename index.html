@@ -231,14 +231,16 @@
         } else {
           errorMsg.textContent = "❌ NPK tidak ditemukan.";
         }
-      } catch (error) {
-        errorMsg.textContent = "⚠️ Gagal terhubung ke database.";
-        console.error(error);
-      }
+     catch (error) {
+    errorMsg.textContent = "⚠️ Gagal terhubung: " + error.message;
+    alert("Error Firebase: " + error.message); // akan muncul pop-up
+}
+
     });
   </script>
 </body>
 </html>
+
 
 
 
