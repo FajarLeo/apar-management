@@ -175,15 +175,21 @@
       </div>
       <button class="login" id="loginBtn">SIGN ME IN</button>
       <div class="forgot">
-        <a href="#">Forgot Password?</a>
+        <a id="forgotLink">Forgot Password?</a>
       </div>
+
+      <div id="forgotForm">
+        <input type="text" id="forgotNPK" placeholder="Masukkan NPK"><br>
+        <button id="resetBtn">Reset Password</button>
+        <div id="forgotMsg"></div>
+      </div>
+
       <div class="error" id="errorMsg"></div>
     </div>
-    <footer style="position: absolute; bottom: 10px; font-size: 12px; font-family: 'Courier New', Courier, monospace; color: #333; text-align: center; width: 100%;">&copy; Be Spirit Copyright 2025</footer>
+    <footer style="position: absolute; bottom:10px; font-size:12px; font-family:'Courier New',Courier,monospace; color:#333; text-align:center; width:100%;">&copy; Be Spirit Copyright 2025</footer>
   </div>
 
-  <!-- Firebase login logic -->
- <script type="module">
+<script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-app.js";
 import { getDatabase, ref, get, child } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-database.js";
 
@@ -201,12 +207,13 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
+// Login
 document.getElementById("loginBtn").addEventListener("click", async () => {
   const npk = document.getElementById("npk").value.trim();
   const password = document.getElementById("password").value.trim();
   const errorMsg = document.getElementById("errorMsg");
 
-  if (!npk || !password) {
+  if(!npk || !password){
     errorMsg.textContent = "⚠️ NPK dan Password wajib diisi!";
     return;
   }
@@ -215,11 +222,9 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
 
   try {
     const snapshot = await get(child(dbRef, `users/${npk}`));
-
-    if (snapshot.exists()) {
+    if(snapshot.exists()){
       const user = snapshot.val();
-
-      if (user.password === password) {
+      if(user.password === password){
         localStorage.setItem("userNPK", npk);
         localStorage.setItem("userName", user.username);
         localStorage.setItem("userStatus", user.status);
@@ -230,16 +235,49 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
     } else {
       errorMsg.textContent = "❌ NPK tidak ditemukan.";
     }
-  } catch (error) {
+  } catch(error){
     errorMsg.textContent = "⚠️ Gagal terhubung: " + error.message;
-    alert("Error Firebase: " + error.message); // popup untuk debug
+    alert("Error Firebase: " + error.message);
     console.error(error);
+  }
+});
+
+// Show forgot password form
+document.getElementById("forgotLink").addEventListener("click", () => {
+  const form = document.getElementById("forgotForm");
+  form.style.display = form.style.display==="none"?"block":"none";
+});
+
+// Forgot password logic
+document.getElementById("resetBtn").addEventListener("click", async () => {
+  const npk = document.getElementById("forgotNPK").value.trim();
+  const msg = document.getElementById("forgotMsg");
+
+  if(!npk){
+    msg.style.color="red";
+    msg.textContent="⚠️ NPK wajib diisi!";
+    return;
+  }
+
+  try {
+    const snapshot = await get(child(ref(db), `users/${npk}`));
+    if(snapshot.exists()){
+      const user = snapshot.val();
+      msg.style.color="green";
+      msg.textContent = `Password untuk NPK ${npk}: ${user.password}`;
+      // Untuk versi produksi: kirim email, jangan tampilkan di halaman
+    } else {
+      msg.style.color="red";
+      msg.textContent="❌ NPK tidak ditemukan.";
+    }
+  } catch(error){
+    msg.style.color="red";
+    msg.textContent="⚠️ Gagal terhubung ke database.";
+    alert("Error Firebase: " + error.message);
   }
 });
 </script>
 
-    });
-  </script>
 </body>
 </html>
 
