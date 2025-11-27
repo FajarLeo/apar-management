@@ -179,6 +179,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-app.js";
 import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-database.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-auth.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAoZPIGUuCZxosN5m2LFirk9Spf7c9QZrA",
@@ -193,89 +194,98 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-const numberSelect = document.getElementById("number");
-const locationInput = document.getElementById("location");
+const auth = getAuth(app);
 
-// 1. Generate nomor 001-079
-for(let i=1; i<=79; i++){
+// Generate nomor 001–079
+const numberSelect = document.getElementById("number");
+for(let i=1; i<=93; i++){
     const numStr = i.toString().padStart(3,'0');
-    const option = document.createElement("option");
-    option.value = numStr;
-    option.textContent = numStr;
-    numberSelect.appendChild(option);
+    const opt = document.createElement("option");
+    opt.value = opt.textContent = numStr;
+    numberSelect.appendChild(opt);
 }
 
-// 2. Ambil nomor yang sudah digunakan
+// Ambil nomor yang sudah dipakai
 async function getUsedNumbers(location){
     const dbRef = ref(db, "aparData");
     const snapshot = await get(dbRef);
-    const usedNumbers = [];
+    const used = [];
     if(snapshot.exists()){
         const data = snapshot.val();
         for(let key in data){
-            if(location && data[key].location.toLowerCase() === location.toLowerCase()){
-                usedNumbers.push(data[key].number);
+            if(location && data[key].location?.toLowerCase() === location.toLowerCase()){
+                used.push(data[key].number);
             }
         }
     }
-    return usedNumbers;
+    return used;
 }
 
-// 3. Update dropdown saat lokasi diisi
-locationInput.addEventListener("input", async ()=>{
+// Disable nomor yang sudah digunakan
+document.getElementById("location").addEventListener("input", async ()=>{
     const location = locationInput.value.trim();
-    const usedNumbers = await getUsedNumbers(location);
+    const used = await getUsedNumbers(location);
 
     for(let opt of numberSelect.options){
         if(opt.value !== "") opt.disabled = false;
     }
 
-    for(let num of usedNumbers){
-        const opt = Array.from(numberSelect.options).find(o => o.value === num);
+    used.forEach(num=>{
+        const opt = [...numberSelect.options].find(o=>o.value === num);
         if(opt) opt.disabled = true;
-    }
+    });
 });
 
-// 4. Submit form dengan validasi dan save ke Firebase
-document.getElementById('aparForm').addEventListener('submit', async function(event){
+// Submit Form
+document.getElementById('aparForm').addEventListener('submit', async (event)=>{
     event.preventDefault();
 
     const location = locationInput.value.trim();
     const number = numberSelect.value;
 
     if(!location || !number){
-        alert('Location dan Number harus diisi!');
+        alert("Location dan Number harus diisi!");
         return;
     }
 
-    const usedNumbers = await getUsedNumbers(location);
-    if(usedNumbers.includes(number)){
+    const used = await getUsedNumbers(location);
+    if(used.includes(number)){
         alert(`Nomor ${number} sudah digunakan di lokasi ${location}.`);
         return;
     }
 
-    // Validasi semua field
-    const requiredFields = ['number', 'location', 'type', 'pressure', 'pressureUnit', 'capacity', 'capacityUnit', 'expired', 'segelCondition', 'nozzleCondition', '5rCondition', 'status'];
+    const requiredFields = [
+        'number','location','type','pressure','pressureUnit',
+        'capacity','capacityUnit','expired','segelCondition',
+        'nozzleCondition','5rCondition','status'
+    ];
+
     let valid = true;
-    requiredFields.forEach(id=>{
+    for(let id of requiredFields){
         const field = document.getElementById(id);
         if(!field.value){
             valid = false;
-            field.style.borderColor = 'red';
+            field.style.borderColor = "red";
         } else {
-            field.style.borderColor = '';
+            field.style.borderColor = "";
         }
-    });
+    }
+
     if(!valid){
-        alert('Mohon isi semua field!');
+        alert("Mohon isi semua field!");
         return;
     }
 
-    // Save ke Firebase
-    const newKey = Date.now(); // key unik
+    // Auth check
+    if(!auth.currentUser){
+        alert("Anda belum login!");
+        return;
+    }
+
+    const newKey = Date.now();
     const data = {
-        number: number,
-        location: location,
+        number,
+        location,
         type: document.getElementById('type').value,
         pressure: document.getElementById('pressure').value,
         pressureUnit: document.getElementById('pressureUnit').value,
@@ -284,16 +294,18 @@ document.getElementById('aparForm').addEventListener('submit', async function(ev
         expired: document.getElementById('expired').value,
         segelCondition: document.getElementById('segelCondition').value,
         nozzleCondition: document.getElementById('nozzleCondition').value,
-        r5Condition: document.getElementById('5rCondition').value,
-        status: document.getElementById('status').value
-        createdBy: auth.currentUser.uid  // penting!
+        r5Condition: document.getElementById('5rCondition').value,  // konsisten!
+        status: document.getElementById('status').value,
+        createdBy: auth.currentUser.uid  // FIXED
     };
 
-    set(ref(db, 'aparData/' + newKey), data)
-    .then(()=>{ alert('Data APAR berhasil disimpan!'); location.reload(); })
-    .catch(err=>{ alert('Gagal menyimpan: ' + err); });
+    set(ref(db, "aparData/" + newKey), data)
+        .then(()=>{ alert("Data APAR berhasil disimpan!"); location.reload(); })
+        .catch(err=> alert("Gagal menyimpan: " + err));
 });
 </script>
+
 </body>
 </html>
+
 
